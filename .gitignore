@@ -1,0 +1,20 @@
+# 白名单：默认忽略一切，只放行代码、示例和文档
+# 投递记录、面试记录、聊天记录、备份、.env 等私人数据永远不会被提交
+/*
+!/.gitignore
+!/.env.example
+!/README.md
+!/requirements.txt
+!/*.py
+!/index.html
+!/使用说明.txt
+!/install-mac.command
+!/install-windows.bat
+!/启动秋招看板.command
+!/demo/
+!/docs/
+
+__pycache__/
+.DS_Store
+*.bak
+*.log

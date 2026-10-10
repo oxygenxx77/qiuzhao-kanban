@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>秋招手帐</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #f3ede3; --paper: #fdfaf5; --ink: #1a1715;
+            --ink-soft: #5c554c; --ink-faint: #a39b8d; --rule: #d8cfc0;
+            --accent: #c4451f; --accent-soft: #d97757;
+            --olive: #6b7a4a; --mustard: #c49628; --wine: #8b2a3c;
+            --teal: #2f6f73; --plum: #7b4b94;
+            --serif: "Playfair Display", "Noto Serif SC", Georgia, serif;
+            --sans: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+        }
+        html.night {
+            --bg: #1c1a17; --paper: #262320; --ink: #f0e9dc;
+            --ink-soft: #b0a798; --ink-faint: #6b6459; --rule: #3a3530;
+            --accent: #e8896a; --accent-soft: #d97757;
+            --teal: #6fb3b8; --plum: #b48cc9;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--sans); background: var(--bg); color: var(--ink);
+            min-height: 100vh; padding: 40px 24px 80px; line-height: 1.6;
+            transition: background .4s, color .4s;
+            background-image:
+                radial-gradient(circle at 20% 0%, rgba(196,69,31,.03), transparent 50%),
+                radial-gradient(circle at 80% 100%, rgba(107,122,74,.03), transparent 50%);
+        }
+
+        .ai-icon { display: block; width: 100%; height: 100%; }
+
+        .toast-container { position: fixed; top: 32px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .toast { background: var(--ink); color: var(--paper); padding: 14px 24px; font-size: 13px; font-family: var(--serif); font-style: italic; animation: toastIn .3s; box-shadow: 6px 6px 0 var(--accent); max-width: 80vw; }
+        .toast.success { box-shadow: 6px 6px 0 var(--olive); }
+        .toast.error { box-shadow: 6px 6px 0 var(--wine); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+
+        .masthead { max-width: 1240px; margin: 0 auto 32px; border-top: 3px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 20px 0 16px; }
+        .masthead-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; padding-bottom: 12px; border-bottom: 1px dashed var(--rule); margin-bottom: 16px; }
+        .masthead-title-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+        .masthead h1 { font-family: var(--serif); font-size: 56px; font-weight: 700; letter-spacing: -1.5px; line-height: .95; font-style: italic; }
+        .masthead h1 .emoji { font-style: normal; font-size: 44px; margin-right: 8px; display: inline-block; filter: drop-shadow(0 2px 4px rgba(196,69,31,.2)); }
+        .masthead .issue { font-family: var(--serif); font-size: 13px; color: var(--ink-soft); letter-spacing: 1px; margin-top: 8px; font-style: italic; }
+        .clock-block { text-align: right; font-variant-numeric: tabular-nums; }
+        .clock-time { font-family: var(--serif); font-size: 52px; font-weight: 600; line-height: 1; color: var(--accent); letter-spacing: -2px; }
+        .clock-date { font-size: 11px; color: var(--ink-faint); letter-spacing: 2px; text-transform: uppercase; margin-top: 6px; }
+
+        .stats { max-width: 1240px; margin: 0 auto 24px; display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+        .stat { padding: 22px 14px; text-align: center; border-right: 1px dashed var(--rule); transition: background .2s; cursor: pointer; }
+        .stat:last-child { border-right: none; }
+        .stat:hover, .stat.active { background: rgba(196,69,31,.06); }
+        .stat .num { font-family: var(--serif); font-size: 40px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+        .stat .label { font-size: 10px; color: var(--ink-faint); letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; }
+        .stat.s-pending .num { color: var(--accent); }
+        .stat.s-interview .num { color: var(--teal); }
+        .stat.s-waiting .num { color: var(--mustard); }
+        .stat.s-submitted .num { color: var(--olive); }
+        .stat.s-offer .num { color: var(--plum); }
+        .stat.s-ended .num { color: var(--ink-faint); }
+
+        /* 今日待办 */
+        .agenda { max-width: 1240px; margin: 0 auto 24px; background: var(--paper); border: 1px solid var(--ink); padding: 16px 20px 18px; }
+        .agenda-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+        .agenda-head h3 { font-family: var(--serif); font-size: 16px; font-style: italic; }
+        .agenda-head .sum { font-size: 11px; color: var(--ink-faint); letter-spacing: 1.5px; }
+        .agenda-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ag-item { display: inline-flex; gap: 8px; align-items: baseline; padding: 6px 12px; border: 1px dashed var(--rule); cursor: pointer; font-size: 13px; font-family: var(--serif); transition: .2s; }
+        .ag-item:hover { border-color: var(--accent); border-style: solid; }
+        .ag-tag { font-family: var(--sans); font-size: 10px; letter-spacing: 1.5px; font-weight: 700; color: var(--ink-faint); }
+        .ag-item.overdue .ag-tag { color: var(--wine); }
+        .ag-item.today .ag-tag { color: var(--accent); }
+        .ag-item.tomorrow .ag-tag { color: var(--mustard); }
+        .ag-time { color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 12px; }
+        .ag-stale { margin-top: 12px; font-size: 12.5px; color: var(--ink-soft); font-family: var(--serif); }
+        .ag-stale a { cursor: pointer; border-bottom: 1px dashed var(--ink-faint); margin-right: 8px; }
+        .ag-stale a:hover { color: var(--accent); border-color: var(--accent); }
+        .agenda-empty { font-family: var(--serif); font-style: italic; color: var(--ink-faint); font-size: 13.5px; }
+
+        .charts-wrap { max-width: 1240px; margin: 0 auto 32px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+        .chart-card { background: var(--paper); border: 1px solid var(--ink); padding: 18px 20px; position: relative; }
+        .chart-card h3 { font-family: var(--serif); font-size: 14px; font-style: italic; letter-spacing: -.2px; margin-bottom: 12px; color: var(--ink); }
+        .chart-card canvas { max-height: 170px; }
+        @media (max-width: 900px) { .charts-wrap { grid-template-columns: 1fr; } }
+
+        .toolbar { max-width: 1240px; margin: 0 auto 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .filter { padding: 7px 14px; border: 1px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500; font-family: var(--sans); transition: .2s; }
+        .filter:hover { background: var(--ink); color: var(--paper); }
+        .filter.active { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+        .search { flex: 1; min-width: 160px; padding: 8px 0; border: none; border-bottom: 1px solid var(--rule); background: transparent; color: var(--ink); font-size: 13px; outline: none; font-family: var(--serif); font-style: italic; }
+        .search::placeholder { color: var(--ink-faint); }
+        .search:focus { border-bottom-color: var(--accent); }
+        .btn { padding: 7px 12px; border: none; background: transparent; color: var(--ink); cursor: pointer; font-size: 12px; letter-spacing: .8px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; border-bottom: 1px solid transparent; transition: .2s; text-decoration: none; font-family: var(--sans); }
+        .btn:hover { border-bottom-color: var(--accent); color: var(--accent); }
+        .btn.calendar.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .btn.add { border: 1px solid var(--ink); }
+        .btn.add:hover { background: var(--ink); color: var(--paper); }
+
+        .grid { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0; border-top: 1px solid var(--ink); }
+        .card { padding: 28px 24px 26px; background: transparent; border-right: 1px dashed var(--rule); border-bottom: 1px dashed var(--rule); cursor: pointer; transition: background .25s; position: relative; }
+        .card:hover { background: var(--paper); }
+        .card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; transition: background .2s; }
+        .card:hover::before { background: var(--accent); }
+        .card.s-offer::before { background: var(--plum); }
+        .card .company { font-family: var(--serif); font-size: 24px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; letter-spacing: -.3px; }
+        .card .positions { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 16px; font-style: italic; font-family: var(--serif); }
+        .card .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 11px; color: var(--ink-faint); }
+        .card .meta .stale { color: var(--wine); }
+        .badge { padding: 3px 10px; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink); border: 1px solid var(--ink); background: transparent; }
+        .badge.pending { color: var(--accent); border-color: var(--accent); }
+        .badge.interview { color: var(--teal); border-color: var(--teal); }
+        .badge.waiting { color: var(--mustard); border-color: var(--mustard); }
+        .badge.submitted { color: var(--olive); border-color: var(--olive); }
+        .badge.offer { color: var(--paper); border-color: var(--plum); background: var(--plum); }
+        .badge.ended { color: var(--ink-faint); border-color: var(--ink-faint); }
+        .deadline { font-size: 11.5px; color: var(--ink-soft); margin-top: 12px; font-family: var(--serif); font-style: italic; }
+        .deadline.urgent { color: var(--accent); font-weight: 600; font-style: normal; }
+        .deadline.soon { color: var(--mustard); }
+        .deadline.iv { color: var(--teal); font-weight: 600; font-style: normal; }
+        .empty { text-align: center; color: var(--ink-faint); padding: 80px 20px; grid-column: 1/-1; font-family: var(--serif); font-style: italic; font-size: 16px; }
+
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .skeleton { background: linear-gradient(90deg, var(--rule) 0%, rgba(216,207,192,.3) 50%, var(--rule) 100%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
+        .skeleton-card { padding: 28px 24px 26px; border-right: 1px dashed var(--rule); border-bottom: 1px dashed var(--rule); }
+        .skeleton-card .sk-line { height: 16px; margin-bottom: 10px; }
+        .skeleton-card .sk-line.title { height: 24px; width: 60%; margin-bottom: 16px; }
+        .skeleton-card .sk-line.short { width: 40%; }
+        .skeleton-card .sk-line.badge { height: 18px; width: 60px; margin-top: 16px; border-radius: 12px; }
+
+        .calendar-view { max-width: 1240px; margin: 0 auto; }
+        .cal-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; font-size: 12px; color: var(--ink-soft); letter-spacing: 1px; border-bottom: 1px dashed var(--rule); padding-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+        .calendar-day { margin-bottom: 40px; }
+        .calendar-day-header { font-family: var(--serif); font-size: 22px; font-weight: 600; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--ink); display: flex; align-items: baseline; justify-content: space-between; font-style: italic; }
+        .calendar-day-header .tag { font-family: var(--sans); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); font-style: normal; font-weight: 600; }
+        .calendar-day-header .tag.tomorrow { color: var(--mustard); }
+        .calendar-day-header .tag.overdue { color: var(--wine); }
+        .calendar-day-header .tag.past { color: var(--ink-faint); }
+        .calendar-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+        .calendar-card { background: var(--paper); padding: 16px 18px; cursor: pointer; transition: .2s; border-left: 3px solid var(--rule); }
+        .calendar-card:hover { border-left-color: var(--accent); transform: translateX(2px); }
+        .calendar-card.s-pending { border-left-color: var(--accent); }
+        .calendar-card.s-waiting { border-left-color: var(--mustard); }
+        .calendar-card.s-submitted { border-left-color: var(--olive); }
+        .calendar-card.k-interview { border-left-color: var(--teal); }
+        .calendar-card.overdue { background: rgba(139,42,60,.06); }
+        .calendar-card.done { opacity: .55; }
+        .cc-company { font-family: var(--serif); font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+        .cc-positions { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 10px; font-style: italic; font-family: var(--serif); }
+        .cc-time { font-size: 11px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px; color: var(--ink-faint); }
+        .cc-time .time { color: var(--ink); font-family: var(--serif); font-weight: 600; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(26,23,21,.5); backdrop-filter: blur(8px); z-index: 100; padding: 20px; overflow-y: auto; }
+        .modal.show { display: block; }
+        .modal-box { background: var(--paper); border: 1px solid var(--ink); padding: 40px 36px 32px; width: 100%; max-width: 520px; margin: 40px auto; position: relative; box-shadow: 12px 12px 0 rgba(26,23,21,.08); }
+        .modal-box::before { content: ''; position: absolute; top: 8px; left: 8px; right: 8px; bottom: 8px; border: 1px solid var(--rule); pointer-events: none; }
+        .modal-box.wide { max-width: 640px; }
+        .modal-box h2 { font-family: var(--serif); font-size: 26px; font-weight: 700; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: baseline; font-style: italic; padding-bottom: 14px; border-bottom: 1px solid var(--ink); }
+        .modal-box h2 button { background: none; border: none; color: var(--ink-soft); font-size: 26px; cursor: pointer; line-height: 1; font-family: var(--serif); position: relative; z-index: 1; }
+        .modal-box h2 button:hover { color: var(--accent); }
+        .edit-field { margin-bottom: 18px; }
+        .edit-field label { display: block; font-size: 10px; color: var(--ink-faint); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 500; }
+        .edit-field input, .edit-field select, .edit-field textarea { width: 100%; padding: 10px 0; border: none; border-bottom: 1px solid var(--rule); background: transparent; color: var(--ink); font-size: 14px; outline: none; font-family: var(--serif); transition: border-color .2s; }
+        .edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus { border-bottom-color: var(--accent); }
+        .edit-field textarea { resize: vertical; min-height: 70px; line-height: 1.7; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .edit-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 28px; padding-top: 20px; border-top: 1px dashed var(--rule); flex-wrap: wrap; position: relative; }
+        .edit-actions .btn { padding: 9px 20px; border: 1px solid var(--ink); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; color: var(--ink); background: transparent; }
+        .edit-actions .btn:hover { background: var(--ink); color: var(--paper); }
+        .edit-actions .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+        .edit-actions .btn.primary:hover { background: var(--wine); border-color: var(--wine); }
+        .edit-actions .btn.danger { border-color: var(--wine); color: var(--wine); margin-right: auto; }
+        .edit-actions .btn.danger:hover { background: var(--wine); color: var(--paper); }
+        .edit-actions .btn:disabled { opacity: .4; cursor: wait; }
+        .sub-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-faint); margin: 26px 0 10px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .sub-title button { background: none; border: none; color: var(--accent); font-size: 11px; letter-spacing: 1px; cursor: pointer; }
+        .timeline { border-left: 1px solid var(--rule); margin-left: 4px; padding-left: 16px; max-height: 220px; overflow-y: auto; }
+        .tl-item { position: relative; padding: 2px 0 12px; font-size: 13px; font-family: var(--serif); line-height: 1.6; }
+        .tl-item::before { content: ''; position: absolute; left: -20px; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+        .tl-time { font-size: 10.5px; color: var(--ink-faint); letter-spacing: 1px; font-family: var(--sans); }
+        .tl-note { color: var(--ink-soft); font-style: italic; }
+        .mini-iv { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--rule); cursor: pointer; font-family: var(--serif); font-size: 13.5px; }
+        .mini-iv:hover { color: var(--accent); }
+        .muted { color: var(--ink-faint); font-family: var(--serif); font-style: italic; font-size: 13px; }
+        .hint { font-size: 12.5px; color: var(--ink-soft); line-height: 1.9; font-family: var(--serif); margin-bottom: 16px; }
+
+        .interview-list { display: flex; flex-direction: column; max-height: 55vh; overflow-y: auto; margin-bottom: 20px; border-top: 1px solid var(--ink); }
+        .interview-item { padding: 18px 0; border-bottom: 1px dashed var(--rule); cursor: pointer; transition: .2s; }
+        .interview-item:hover { padding-left: 8px; }
+        .interview-item .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; gap: 10px; flex-wrap: wrap; }
+        .interview-item .title { font-family: var(--serif); font-weight: 700; font-size: 16px; }
+        .interview-item .meta { font-size: 11px; color: var(--ink-faint); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+        .interview-item .meta.soon { color: var(--teal); font-weight: 600; }
+        .interview-item .q { margin-top: 8px; font-size: 12px; color: var(--ink-soft); font-family: var(--serif); font-style: italic; }
+        .result { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; padding: 3px 10px; border: 1px solid currentColor; }
+        .result.通过 { color: var(--olive); }
+        .result.已挂 { color: var(--wine); }
+        .result.待定 { color: var(--mustard); }
+
+        .jd-content, .report-content { white-space: pre-wrap; font-size: 14px; line-height: 1.9; color: var(--ink); background: rgba(196,69,31,.04); padding: 24px; border-left: 3px solid var(--accent); font-family: var(--serif); }
+        .jd-content { max-height: 55vh; overflow-y: auto; margin-top: 16px; }
+        .report-content.review { border-left-color: var(--olive); background: rgba(107,122,74,.06); margin-top: 16px; }
+
+        .mock-chat { max-height: 50vh; overflow-y: auto; padding: 16px 4px; margin-bottom: 16px; border-top: 1px solid var(--ink); border-bottom: 1px dashed var(--rule); }
+        .mock-msg { margin-bottom: 16px; font-family: var(--serif); font-size: 14px; line-height: 1.8; white-space: pre-wrap; }
+        .mock-msg.interviewer { padding: 14px 16px; border-left: 3px solid var(--accent); background: rgba(196,69,31,.04); }
+        .mock-msg.candidate { padding: 14px 16px; border-left: 3px solid var(--ink-faint); background: rgba(26,23,21,.03); }
+        .mock-msg.review { padding: 14px 16px; border-left: 3px solid var(--olive); background: rgba(107,122,74,.07); }
+        .mock-msg .role { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; font-style: normal; font-family: var(--sans); font-weight: 600; }
+        .mock-input-area { display: flex; gap: 10px; align-items: flex-end; }
+        .mock-input-area textarea { flex: 1; padding: 10px 0; border: none; border-bottom: 1px solid var(--rule); background: transparent; color: var(--ink); font-size: 14px; outline: none; font-family: var(--serif); resize: none; min-height: 36px; max-height: 120px; }
+        .mock-input-area textarea:focus { border-bottom-color: var(--accent); }
+
+        #chat-toggle { position: fixed; right: 32px; bottom: 32px; width: 64px; height: 64px; border-radius: 50%; background: var(--ink); color: var(--paper); border: none; cursor: pointer; box-shadow: 6px 6px 0 var(--accent); padding: 16px; z-index: 90; transition: .25s; }
+        #chat-toggle:hover { transform: translate(-2px, -2px); box-shadow: 9px 9px 0 var(--accent); }
+        #chat-panel { position: fixed; right: 32px; bottom: 112px; width: 420px; height: min(640px, calc(100vh - 140px)); background: var(--paper); border: 1px solid var(--ink); z-index: 95; display: none; flex-direction: column; box-shadow: 12px 12px 0 rgba(26,23,21,.15); }
+        #chat-panel.show { display: flex; }
+        #chat-header { padding: 18px 22px; border-bottom: 1px solid var(--ink); display: flex; align-items: center; justify-content: space-between; }
+        #chat-header .title { display: flex; align-items: center; gap: 12px; }
+        #chat-header .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: var(--paper); padding: 10px; box-sizing: border-box; }
+        #chat-header .name { font-family: var(--serif); font-size: 17px; font-weight: 700; font-style: italic; }
+        #chat-header .subtitle { font-size: 10px; color: var(--ink-faint); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+        #chat-header .icon-btn { background: none; border: none; color: var(--ink-soft); cursor: pointer; font-size: 16px; padding: 6px; transition: .2s; }
+        #chat-header .icon-btn:hover { color: var(--accent); }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 20px 18px; display: flex; flex-direction: column; gap: 16px; }
+        #chat-messages::-webkit-scrollbar { width: 4px; }
+        #chat-messages::-webkit-scrollbar-thumb { background: var(--rule); }
+        .msg { display: flex; gap: 10px; max-width: 90%; animation: msgIn .3s ease-out; }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+        .msg-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .msg.user .msg-body { align-items: flex-end; }
+        .msg .bubble { padding: 12px 16px; font-size: 13.5px; line-height: 1.7; word-break: break-word; white-space: pre-wrap; }
+        .msg.ai .bubble { background: transparent; border: 1px solid var(--rule); color: var(--ink); font-family: var(--serif); }
+        .msg.user .bubble { background: var(--ink); color: var(--paper); }
+        .msg .mini-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; padding: 7px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+        .msg.ai .mini-avatar { background: var(--ink); color: var(--paper); }
+        .msg.user .mini-avatar { background: var(--accent); color: var(--paper); font-size: 13px; font-weight: 700; padding: 0; }
+        .msg .bubble strong { color: var(--accent); font-weight: 700; }
+        .msg.ai .bubble a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; word-break: break-all; }
+        .msg.ai .bubble a:hover { opacity: .75; }
+        .msg.ai .bubble code { background: rgba(196,69,31,.08); padding: 2px 6px; font-family: ui-monospace, monospace; font-size: 12.5px; color: var(--accent); }
+        .msg.typing .bubble { display: flex; gap: 5px; padding: 16px 18px; align-items: center; }
+        .msg.typing .dot { width: 6px; height: 6px; background: var(--ink-faint); border-radius: 50%; animation: blink 1.4s infinite; }
+        .msg.typing .dot:nth-child(2) { animation-delay: .2s; }
+        .msg.typing .dot:nth-child(3) { animation-delay: .4s; }
+        @keyframes blink { 0%,60%,100% { opacity: .25; } 30% { opacity: 1; } }
+        .actions { border: 1px dashed var(--rule); padding: 8px 12px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; line-height: 1.6; }
+        .act.ok { color: var(--olive); }
+        .act.fail { color: var(--wine); }
+        .undo-btn { align-self: flex-start; margin-top: 4px; background: none; border: 1px solid var(--ink-faint); color: var(--ink-soft); font-size: 11px; padding: 3px 10px; cursor: pointer; letter-spacing: .5px; }
+        .undo-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .undo-done { color: var(--ink-faint); font-style: italic; }
+        #chat-chips { display: flex; gap: 6px; padding: 10px 18px 0; overflow-x: auto; flex-shrink: 0; border-top: 1px dashed var(--rule); }
+        #chat-chips::-webkit-scrollbar { display: none; }
+        .chip { white-space: nowrap; border: 1px solid var(--rule); background: transparent; color: var(--ink-soft); font-size: 11.5px; padding: 4px 10px; cursor: pointer; font-family: var(--serif); transition: .2s; }
+        .chip:hover { border-color: var(--accent); color: var(--accent); }
+        #chat-input-area { padding: 12px 18px 16px; display: flex; gap: 10px; align-items: flex-end; }
+        #chat-input { flex: 1; padding: 10px 0; border: none; border-bottom: 1px solid var(--rule); background: transparent; color: var(--ink); font-size: 14px; outline: none; font-family: var(--serif); font-style: italic; resize: none; max-height: 120px; min-height: 36px; line-height: 1.5; }
+        #chat-input::placeholder { color: var(--ink-faint); }
+        #chat-input:focus { border-bottom-color: var(--accent); }
+        #chat-send { width: 40px; height: 40px; border: none; background: var(--ink); color: var(--paper); cursor: pointer; font-size: 16px; flex-shrink: 0; transition: .2s; display: flex; align-items: center; justify-content: center; }
+        #chat-send:hover { background: var(--accent); }
+        #chat-send:disabled { opacity: .3; cursor: not-allowed; }
+        #chat-attach { width: 40px; height: 40px; border: 1px solid var(--rule); background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 16px; flex-shrink: 0; transition: .2s; }
+        #chat-attach:hover { border-color: var(--accent); color: var(--accent); }
+        #chat-previews { display: none; gap: 10px; padding: 12px 18px 0; flex-wrap: wrap; flex-shrink: 0; }
+        #chat-previews.show { display: flex; }
+        .chat-preview { position: relative; width: 56px; height: 56px; border: 1px solid var(--rule); }
+        .chat-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .chat-preview button { position: absolute; top: -8px; right: -8px; width: 18px; height: 18px; border-radius: 50%; border: none; background: var(--ink); color: var(--paper); font-size: 12px; line-height: 18px; padding: 0; cursor: pointer; }
+        .msg-images { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+        .msg-images img { max-width: 160px; max-height: 160px; border: 1px solid var(--rule); display: block; }
+        #chat-panel.dragover { outline: 2px dashed var(--accent); outline-offset: -8px; }
+
+        /* SQL 练习 */
+        .modal-box.sql { max-width: 1100px; }
+        .sql-layout { display: grid; grid-template-columns: 250px 1fr; gap: 24px; position: relative; }
+        .sql-side { max-height: 70vh; overflow-y: auto; border-right: 1px dashed var(--rule); padding-right: 14px; }
+        .sql-table { margin-bottom: 8px; }
+        .sql-table summary { cursor: pointer; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 700; padding: 4px 0; list-style: none; }
+        .sql-table summary::-webkit-details-marker { display: none; }
+        .sql-table summary::before { content: '▸'; color: var(--ink-faint); margin-right: 4px; }
+        .sql-table[open] summary::before { content: '▾'; }
+        .sql-tname { flex: 1; }
+        .sql-tname:hover, .sql-col:hover .sql-cname { color: var(--accent); }
+        .sql-count { font-size: 10px; color: var(--ink-faint); font-weight: 400; font-family: var(--sans); white-space: nowrap; }
+        .sql-tdesc { font-size: 11.5px; color: var(--ink-soft); font-family: var(--serif); font-style: italic; margin: 0 0 6px 14px; line-height: 1.5; }
+        .sql-col { margin-left: 14px; padding: 3px 0; cursor: pointer; font-family: ui-monospace, Menlo, monospace; font-size: 12px; display: flex; flex-wrap: wrap; gap: 0 8px; align-items: baseline; }
+        .sql-type { color: var(--ink-faint); font-size: 10.5px; }
+        .sql-cdesc { width: 100%; font-family: var(--sans); font-size: 10.5px; color: var(--ink-faint); line-height: 1.4; }
+        #sql-examples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        #sql-input { width: 100%; min-height: 160px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.6; padding: 12px 14px; border: 1px solid var(--rule); background: rgba(26,23,21,.03); color: var(--ink); outline: none; resize: vertical; tab-size: 2; position: relative; }
+        #sql-input:focus { border-color: var(--accent); }
+        .sql-bar { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 14px; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-faint); position: relative; }
+        #sql-result { max-height: 45vh; overflow: auto; position: relative; }
+        #sql-result table { border-collapse: collapse; width: 100%; font-size: 12.5px; border-top: 1px solid var(--ink); }
+        #sql-result th { position: sticky; top: 0; background: var(--paper); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; white-space: nowrap; }
+        #sql-result td { padding: 7px 10px; border-bottom: 1px dashed var(--rule); vertical-align: top; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--serif); }
+        #sql-result td.null { color: var(--ink-faint); font-style: italic; }
+        #sql-result tr:hover td { background: rgba(196,69,31,.04); }
+        .sql-error { color: var(--wine); padding: 14px; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; background: rgba(139,42,60,.06); border-left: 3px solid var(--wine); white-space: pre-wrap; }
+        .sql-meta { font-size: 10.5px; color: var(--ink-faint); margin-top: 12px; word-break: break-all; }
+        .hint code { font-family: ui-monospace, Menlo, monospace; color: var(--accent); font-size: 12px; }
+
+        #print-area { display: none; }
+        @media print {
+            body > *:not(#print-area) { display: none !important; }
+            #print-area { display: block !important; padding: 20px; color: #000; background: #fff; font-family: "Noto Serif SC", serif; }
+            #print-area h1 { font-size: 24px; margin-bottom: 8px; }
+            #print-area .subtitle { font-size: 12px; color: #666; margin-bottom: 16px; font-style: italic; }
+            #print-area table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            #print-area th, #print-area td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
+            #print-area th { background: #f3ede3; font-weight: 600; }
+            #print-area .section-title { font-size: 16px; margin: 24px 0 8px; font-style: italic; border-bottom: 1px solid #000; padding-bottom: 6px; }
+            #print-area .interview-block { margin-bottom: 20px; padding: 12px; border-left: 3px solid #c4451f; page-break-inside: avoid; }
+        }
+
+        @media (max-width: 1000px) {
+            .stats { grid-template-columns: repeat(4, 1fr); }
+            .stat { border-bottom: 1px dashed var(--rule); }
+        }
+        @media (max-width: 768px) {
+            body { padding: 24px 16px 80px; }
+            .masthead h1 { font-size: 36px; }
+            .clock-time { font-size: 36px; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .stat { padding: 18px 12px; }
+            .stat .num { font-size: 32px; }
+            .grid { grid-template-columns: 1fr; }
+            .card { border-right: none; }
+            .calendar-cards { grid-template-columns: 1fr; }
+            .row2 { grid-template-columns: 1fr; gap: 0; }
+            .sql-layout { grid-template-columns: 1fr; }
+            .sql-side { max-height: 200px; border-right: none; }
+            #chat-toggle { right: 16px; bottom: 16px; width: 56px; height: 56px; padding: 14px; box-shadow: 4px 4px 0 var(--accent); }
+            #chat-panel { right: 0; left: 0; bottom: 0; width: 100%; height: 100vh; height: 100dvh; box-shadow: none; }
+            .modal-box { padding: 28px 22px; margin: 20px auto; box-shadow: 6px 6px 0 rgba(26,23,21,.1); }
+            .toolbar { gap: 4px; }
+            .filter, .btn { font-size: 10px; padding: 6px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toast-container" id="toast-container"></div>
+
+<div class="masthead">
+    <div class="masthead-top">
+        <span>Vol. 2026 · Autumn</span>
+        <span>秋招手帐 · 求职记录</span>
+        <span id="lastUpdate">更新于 —</span>
+    </div>
+    <div class="masthead-title-row">
+        <div>
+            <h1><span class="emoji">🍂</span>秋招手帐</h1>
+            <div class="issue">— 记录每一次投递，等待每一次回音 —</div>
+        </div>
+        <div class="clock-block">
+            <div class="clock-time" id="clock-time">--:--:--</div>
+            <div class="clock-date" id="clock-date">加载中</div>
+        </div>
+    </div>
+</div>
+
+<div class="stats" id="stats"></div>
+<div class="agenda" id="agenda"><div class="agenda-empty">加载待办中…</div></div>
+
+<div class="charts-wrap">
+    <div class="chart-card">
+        <h3>📈 投递漏斗</h3>
+        <canvas id="funnel-chart"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>🍩 状态分布</h3>
+        <canvas id="pie-chart"></canvas>
+    </div>
+</div>
+
+<div class="toolbar">
+    <button class="filter active" data-filter="all">全部</button>
+    <button class="filter" data-filter="pending">待测评</button>
+    <button class="filter" data-filter="interview">面试中</button>
+    <button class="filter" data-filter="waiting">等结果</button>
+    <button class="filter" data-filter="submitted">已投递</button>
+    <button class="filter" data-filter="offer">Offer</button>
+    <button class="filter" data-filter="ended">已结束</button>
+    <input class="search" id="search" placeholder="搜索公司、岗位、备注…（按 / 聚焦）">
+    <button class="btn add" onclick="openAdd()">＋ 新增</button>
+    <button class="btn calendar" id="calendar-btn" onclick="toggleCalendar()">📅 日历</button>
+    <button class="btn" onclick="openInterviewList()">📝 面试</button>
+    <button class="btn" onclick="openJDModal()">🔍 抓JD</button>
+    <button class="btn" onclick="openProfileModal()">⚙️ 偏好</button>
+    <button class="btn" onclick="showWeeklyReport()">📊 周报</button>
+    <button class="btn" onclick="openSql()">🗄 SQL练习</button>
+    <button class="btn" onclick="openSubscribe()">📲 订阅日历</button>
+    <button class="btn" onclick="exportPDF()">📄 PDF</button>
+    <a class="btn" id="jh-link" href="http://127.0.0.1:8001" target="_blank" style="display:none">🧭 求职助手</a>
+    <button class="btn" id="theme-btn" onclick="toggleTheme()" title="切换">🌙</button>
+</div>
+
+<div id="kanban-view" class="grid"></div>
+<div id="calendar-view" class="calendar-view" style="display:none;"></div>
+
+<div class="modal" id="report-modal"><div class="modal-box wide">
+    <h2>本周纪事 <button onclick="closeModal('report-modal')">×</button></h2>
+    <div class="report-content" id="report-content">加载中...</div>
+    <div class="report-content review" id="review-content" style="display:none"></div>
+    <div class="edit-actions"><button class="btn primary" id="review-btn" onclick="aiReview()">🍂 小招点评</button></div>
+</div></div>
+
+<div class="modal" id="edit-modal"><div class="modal-box wide">
+    <h2><span id="edit-title">编辑记录</span> <button onclick="closeModal('edit-modal')">×</button></h2>
+    <div class="row2">
+        <div class="edit-field"><label>公司 *</label><input id="edit-company"></div>
+        <div class="edit-field"><label>状态</label><select id="edit-status"></select></div>
+    </div>
+    <div class="edit-field"><label>岗位（多个用顿号分隔）</label><input id="edit-positions"></div>
+    <div class="row2">
+        <div class="edit-field"><label>截止时间（测评 / 笔试）</label><input id="edit-deadline" type="datetime-local"></div>
+        <div class="edit-field"><label>投递日期</label><input id="edit-applied" type="date"></div>
+    </div>
+    <div class="edit-field"><label>备注</label><textarea id="edit-note"></textarea></div>
+    <div id="edit-extra">
+        <div class="sub-title"><span>面试</span><button onclick="openInterviewEdit(null, editingCompanyName())">＋ 记一场面试</button></div>
+        <div id="edit-interviews"></div>
+        <div class="sub-title"><span>进度时间线</span></div>
+        <div id="edit-timeline"></div>
+    </div>
+    <div class="edit-actions">
+        <button class="btn danger" id="edit-delete" onclick="deleteFromEdit()">删除</button>
+        <button class="btn" onclick="closeModal('edit-modal')">取消</button>
+        <button class="btn primary" id="edit-save" onclick="saveEdit()">保存</button>
+    </div>
+</div></div>
+
+<div class="modal" id="interview-list-modal"><div class="modal-box wide">
+    <h2>面试记录 <button onclick="closeModal('interview-list-modal')">×</button></h2>
+    <div class="interview-list" id="interview-list"></div>
+    <div class="edit-actions">
+        <button class="btn" onclick="openMock()">🎤 面试模拟</button>
+        <button class="btn primary" onclick="openInterviewEdit()">＋ 新增面试</button>
+    </div>
+</div></div>
+
+<div class="modal" id="interview-edit-modal"><div class="modal-box">
+    <h2><span id="interview-edit-title">新增面试</span> <button onclick="closeModal('interview-edit-modal')">×</button></h2>
+    <div class="edit-field"><label>公司 *</label><input id="iv-company" list="company-options"></div>
+    <div class="row2">
+        <div class="edit-field"><label>岗位</label><input id="iv-position"></div>
+        <div class="edit-field"><label>轮次</label><input id="iv-round" list="round-options"></div>
+    </div>
+    <div class="row2">
+        <div class="edit-field"><label>日期</label><input id="iv-date" type="date"></div>
+        <div class="edit-field"><label>时间</label><input id="iv-time" type="time"></div>
+    </div>
+    <div class="edit-field"><label>结果</label>
+        <select id="iv-result"><option value="待定">待定</option><option value="通过">通过</option><option value="已挂">已挂</option></select>
+    </div>
+    <div class="edit-field"><label>面试题目</label><textarea id="iv-questions"></textarea></div>
+    <div class="edit-field"><label>复盘心得</label><textarea id="iv-reflection"></textarea></div>
+    <div class="edit-actions">
+        <button class="btn danger" id="iv-delete-btn" onclick="deleteInterview()" style="display:none">删除</button>
+        <button class="btn" onclick="closeModal('interview-edit-modal')">取消</button>
+        <button class="btn primary" onclick="saveInterview()">保存</button>
+    </div>
+</div></div>
+<datalist id="round-options"><option>一面</option><option>二面</option><option>三面</option><option>终面</option><option>HR面</option><option>群面</option><option>AI面</option></datalist>
+<datalist id="company-options"></datalist>
+
+<div class="modal" id="mock-modal"><div class="modal-box wide">
+    <h2>🎤 面试模拟 <button onclick="closeModal('mock-modal')">×</button></h2>
+    <div id="mock-setup">
+        <p class="hint">小招扮演面试官，会结合你的简历追问经历；结束后给出评分和改进建议，并存进面试记录本。</p>
+        <div class="edit-field"><label>公司</label><input id="mock-company" list="company-options" placeholder="如：字节跳动"></div>
+        <div class="row2">
+            <div class="edit-field"><label>岗位</label><input id="mock-position" placeholder="如：产品运营"></div>
+            <div class="edit-field"><label>轮次</label><input id="mock-round" list="round-options" value="一面"></div>
+        </div>
+        <div class="edit-actions"><button class="btn primary" onclick="startMock()">开始模拟</button></div>
+    </div>
+    <div id="mock-chat-area" style="display:none;">
+        <div class="mock-chat" id="mock-chat"></div>
+        <div class="mock-input-area" id="mock-input-area">
+            <textarea id="mock-input" placeholder="输入你的回答…（Enter 发送，Shift+Enter 换行）" rows="2"></textarea>
+            <button class="btn primary" onclick="sendMockAnswer()">发送</button>
+        </div>
+        <div class="edit-actions" style="margin-top:16px;"><button class="btn" id="mock-end-btn" onclick="endMock()">结束并评估</button></div>
+    </div>
+</div></div>
+
+<div class="modal" id="jd-modal"><div class="modal-box">
+    <h2>抓取岗位 JD <button onclick="closeModal('jd-modal')">×</button></h2>
+    <div class="edit-field"><label>输入「公司 + 岗位」，AI 联网搜索整理</label><input id="jd-input" placeholder="如：字节跳动 产品运营"></div>
+    <div class="edit-actions"><button class="btn primary" id="jd-btn" onclick="fetchJD()">开始抓取</button></div>
+    <div id="jd-result-area" style="display:none;">
+        <div class="jd-content" id="jd-content"></div>
+        <div class="edit-actions"><button class="btn" onclick="copyText(document.getElementById('jd-content').textContent)">复制全文</button></div>
+    </div>
+</div></div>
+
+<div class="modal" id="profile-modal"><div class="modal-box">
+    <h2>我的偏好 <button onclick="closeModal('profile-modal')">×</button></h2>
+    <p class="hint">小招回答「投哪家」「选哪个 offer」时会参考这些偏好。</p>
+    <div class="edit-field"><label>目标城市</label><input id="pf-cities" placeholder="如：深圳、上海"></div>
+    <div class="edit-field"><label>偏好岗位方向</label><input id="pf-roles" placeholder="如：电商运营、产品运营"></div>
+    <div class="edit-field"><label>不想去的公司</label><input id="pf-avoid"></div>
+    <div class="edit-field"><label>其他备注</label><textarea id="pf-notes" placeholder="如：不接受996、希望有双休..."></textarea></div>
+    <div class="edit-actions">
+        <button class="btn" onclick="closeModal('profile-modal')">取消</button>
+        <button class="btn primary" onclick="saveProfile()">保存</button>
+    </div>
+</div></div>
+
+<div class="modal" id="subscribe-modal"><div class="modal-box">
+    <h2>订阅到系统日历 <button onclick="closeModal('subscribe-modal')">×</button></h2>
+    <p class="hint">所有测评截止和面试都会出现在 Mac「日历」里，截止前 24 小时 / 2 小时、面试前 1 小时自动弹提醒。看板一改，日历 15 分钟内跟着变。</p>
+    <div class="edit-field"><label>订阅地址</label><input id="sub-url" readonly onclick="this.select()"></div>
+    <p class="hint">· 点「一键订阅」后，「位置」请选 <b>我的 Mac</b>（选 iCloud 的话苹果服务器访问不到你电脑上的看板）。<br>
+        · 看板关着的时候日历不会更新，已经同步的日程不受影响。<br>
+        · <span id="push-hint"></span></p>
+    <div class="edit-actions">
+        <a class="btn" id="sub-download" href="#">下载 .ics</a>
+        <button class="btn" onclick="copyText(document.getElementById('sub-url').value)">复制地址</button>
+        <a class="btn primary" id="sub-open" href="#">一键订阅</a>
+    </div>
+</div></div>
+
+<div class="modal" id="sql-modal"><div class="modal-box sql">
+    <h2>🗄 SQL 练习 <button onclick="closeModal('sql-modal')">×</button></h2>
+    <div class="sql-layout">
+        <div class="sql-side">
+            <div class="sub-title" style="margin-top:0"><span>数据表</span><button onclick="syncSql()">↻ 同步</button></div>
+            <div id="sql-tables"><div class="muted">加载中…</div></div>
+        </div>
+        <div>
+            <p class="hint">看板数据会自动同步到 SQLite 数据库 <code>kanban.db</code>，这里随便查，只读，改不坏看板。点左边的表名、字段名可以直接插入；<code>jh.</code> 开头的是求职助手的 <code>jobs.db</code>。不知道从哪开始就点下面的例子。</p>
+            <div id="sql-examples"></div>
+            <textarea id="sql-input" spellcheck="false"></textarea>
+            <div class="sql-bar">
+                <span id="sql-status">⌘ + Enter 运行</span>
+                <span><button class="filter" onclick="clearSql()">清空</button> <button class="filter active" id="sql-run" onclick="runSql()">▶ 运行</button></span>
+            </div>
+            <div id="sql-result"></div>
+            <div class="sql-meta" id="sql-meta"></div>
+        </div>
+    </div>
+</div></div>
+
+<div id="print-area"></div>
+
+<button id="chat-toggle" onclick="toggleChat()" title="小招">
+    <svg class="ai-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3.5" y="3" width="14.5" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <line x1="7.5" y1="3" x2="7.5" y2="21" stroke="currentColor" stroke-width="1.6"/>
+        <line x1="10.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <line x1="10.5" y1="13" x2="15.5" y2="13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <circle cx="19.5" cy="5" r="3.5" fill="#c4451f"/>
+        <text x="19.5" y="7.3" text-anchor="middle" font-size="5" font-weight="800" fill="#fdfaf5" font-family="-apple-system, sans-serif">?</text>
+    </svg>
+</button>
+
+<div id="chat-panel">
+    <div id="chat-header">
+        <div class="title">
+            <div class="avatar">
+                <svg class="ai-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3.5" y="3" width="14.5" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <line x1="7.5" y1="3" x2="7.5" y2="21" stroke="currentColor" stroke-width="1.6"/>
+                    <line x1="10.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                    <line x1="10.5" y1="13" x2="15.5" y2="13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                    <circle cx="19.5" cy="5" r="3.5" fill="#c4451f"/>
+                    <text x="19.5" y="7.3" text-anchor="middle" font-size="5" font-weight="800" fill="#fdfaf5" font-family="-apple-system, sans-serif">?</text>
+                </svg>
+            </div>
+            <div><div class="name">小招</div><div class="subtitle">说一句，看板自动更新</div></div>
+        </div>
+        <div>
+            <button class="icon-btn" onclick="clearChat()" title="清空">🗑</button>
+            <button class="icon-btn" onclick="toggleChat()" title="关闭">×</button>
+        </div>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-chips">
+        <button class="chip" data-send="今天和最近几天我要做什么？">📋 最近待办</button>
+        <button class="chip" data-send="哪些公司很久没消息了，该怎么跟进？">🔔 该跟进谁</button>
+        <button class="chip" data-fill="今天投了 ">📮 投了…</button>
+        <button class="chip" data-fill="收到测评：">🧪 收到测评…</button>
+        <button class="chip" data-fill="测评做完了：">✅ 测评做完…</button>
+        <button class="chip" data-fill="约了面试：">🎤 约了面试…</button>
+        <button class="chip" data-send="根据我的简历和偏好，求职助手里还有哪些值得投的岗位？">🧭 还能投啥</button>
+    </div>
+    <div id="chat-previews"></div>
+    <div id="chat-input-area">
+        <button id="chat-attach" title="发图片（也可以直接粘贴截图或拖进来）">🖼</button>
+        <input id="chat-file" type="file" accept="image/*" multiple hidden>
+        <textarea id="chat-input" placeholder="比如：oppo AI面做完了，大疆测评也写了（可粘贴截图）" rows="1"></textarea>
+        <button id="chat-send">➤</button>
+    </div>
+</div>
+
+<script>
+const API = location.protocol.startsWith('http') ? '' : 'http://127.0.0.1:8000';
+const STATUS = { pending: '待测评', interview: '面试中', waiting: '等结果', submitted: '已投递', offer: 'Offer', ended: '已结束' };
+const STATUS_EN = { pending: 'To Do', interview: 'Interview', waiting: 'Waiting', submitted: 'Submitted', offer: 'Offer', ended: 'Closed' };
+const ORDER = Object.keys(STATUS);
+const BUCKET = { overdue: '已过期', today: '今天', tomorrow: '明天', week: '7天内' };
+const WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const AI_ICON_SVG = document.querySelector('#chat-toggle svg').outerHTML;
+
+let data = [], interviews = [], agendaData = { items: [], stale: [] }, sysStatus = {};
+let dataSig = '', dataLoaded = false, filter = 'all', search = '', isCalendar = false;
+let editingId = null, editingInterviewId = null, chatLoaded = false, chatBusy = false;
+let mockHistory = [], mockActive = false, funnelChart = null, pieChart = null, lastChartSignature = '';
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const localDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fmtDT = d => `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const norm = s => String(s || '').replace(/\s+/g, '').toLowerCase();
+const sameCompany = (a, b) => norm(a) === norm(b);
+const isMock = iv => (iv.round || '').includes('模拟');
+
+async function api(path, body) {
+    const opt = body === undefined ? { cache: 'no-store' }
+        : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+    const r = await fetch(API + path, opt);
+    let d = null;
+    try { d = await r.json(); } catch (e) {}
+    if (!r.ok) throw Object.assign(new Error((d && d.detail) || `请求失败（${r.status}）`), { status: r.status });
+    return d;
+}
+
+function showToast(msg, type = 'info') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`; t.textContent = msg; $('toast-container').appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 3200);
+}
+function copyText(text) { navigator.clipboard.writeText(text).then(() => showToast('已复制', 'success')); }
+function openModal(id) { $(id).classList.add('show'); }
+function closeModal(id) {
+    $(id).classList.remove('show');
+    if (id === 'edit-modal') editingId = null;
+    if (id === 'interview-edit-modal') editingInterviewId = null;
+    if (id === 'mock-modal') mockActive = false;
+}
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
+
+// ---------- 主题 & 时钟 ----------
+function applyTheme(t) {
+    document.documentElement.classList.toggle('night', t === 'night');
+    $('theme-btn').textContent = t === 'night' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+    const t = document.documentElement.classList.contains('night') ? 'day' : 'night';
+    localStorage.setItem('theme', t); localStorage.setItem('themeManual', 'true');
+    applyTheme(t); resetCharts();
+}
+function autoTheme() {
+    if (localStorage.getItem('themeManual') === 'true') return applyTheme(localStorage.getItem('theme') || 'day');
+    const h = new Date().getHours(), t = h >= 6 && h < 18 ? 'day' : 'night';
+    const changed = document.documentElement.classList.contains('night') !== (t === 'night');
+    applyTheme(t); if (changed) resetCharts();
+}
+function updateClock() {
+    const now = new Date();
+    $('clock-time').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    $('clock-date').textContent = `${MO[now.getMonth()]} ${now.getDate()} · ${WD[now.getDay()]}`;
+}
+
+// ---------- 数据 ----------
+function renderSkeleton() {
+    $('kanban-view').innerHTML = Array(6).fill(`<div class="skeleton-card"><div class="skeleton sk-line title"></div>
+        <div class="skeleton sk-line"></div><div class="skeleton sk-line short"></div><div class="skeleton sk-line badge"></div></div>`).join('');
+}
+
+async function loadData(force = false) {
+    if (!dataLoaded) renderSkeleton();
+    try {
+        const [cards, ivs] = await Promise.all([api('/api/data'), api('/api/interviews')]);
+        const sig = JSON.stringify([cards, ivs]);
+        if (sig === dataSig && !force) return;
+        dataSig = sig; data = cards; interviews = ivs; dataLoaded = true;
+        $('company-options').innerHTML = data.map(c => `<option value="${esc(c.company)}">`).join('');
+        await loadAgenda();
+        render(); renderCharts();
+        if ($('interview-list-modal').classList.contains('show')) renderInterviewList();
+        $('lastUpdate').textContent = '更新于 ' + fmtDT(new Date());
+    } catch (e) {
+        if (!dataLoaded) $('kanban-view').innerHTML = '<div class="empty">无法连接后端 · 请双击桌面上的「启动秋招看板」</div>';
+    }
+}
+async function loadAgenda() {
+    try { agendaData = await api('/api/agenda'); } catch (e) {}
+    renderAgenda();
+}
+
+function counts() {
+    const s = Object.fromEntries(ORDER.map(k => [k, 0]));
+    data.forEach(c => { if (c.status in s) s[c.status]++; });
+    return s;
+}
+function staleDays(company) {
+    const x = (agendaData.stale || []).find(s => s.company === company);
+    return x ? x.days : 0;
+}
+function nextInterview(company) {
+    const today = localDate(new Date());
+    return interviews.filter(iv => sameCompany(iv.company, company) && !isMock(iv) && (iv.result || '待定') === '待定' && iv.date && iv.date >= today)
+        .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))[0];
+}
+function cardById(id) { return data.find(c => String(c.id) === String(id)); }
+function cardByName(name) { return data.find(c => sameCompany(c.company, name)) || data.find(c => norm(c.company).includes(norm(name)) || norm(name).includes(norm(c.company))); }
+
+function setFilter(k) {
+    filter = k;
+    document.querySelectorAll('.filter').forEach(x => x.classList.toggle('active', x.dataset.filter === k));
+    isCalendar = false; $('calendar-btn').classList.remove('active');
+    render();
+}
+function matches(c) {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return [c.company, c.positions, c.note].some(x => (x || '').toLowerCase().includes(s));
+}
+
+function render() { renderStats(); if (isCalendar) renderCalendar(); else renderKanban(); }
+
+function renderStats() {
+    const s = counts();
+    const cells = [['all', data.length, 'Companies', '']].concat(ORDER.map(k => [k, s[k], `${STATUS[k]} · ${STATUS_EN[k]}`, 's-' + k]));
+    $('stats').innerHTML = cells.map(([k, n, l, cls]) =>
+        `<div class="stat ${cls} ${filter === k ? 'active' : ''}" onclick="setFilter('${k}')"><div class="num">${n}</div><div class="label">${l}</div></div>`).join('');
+}
+
+function renderAgenda() {
+    const { items = [], stale = [] } = agendaData || {};
+    const el = $('agenda');
+    const near = items.filter(i => i.bucket !== 'week');
+    const week = items.filter(i => i.bucket === 'week');
+    const head = `<div class="agenda-head"><h3>🗓 今日待办</h3><span class="sum">今明 ${near.length} 项 · 7 天内 ${week.length} 项${stale.length ? ` · 久等 ${stale.length} 家` : ''}
+        <button class="btn" onclick="openSubscribe()">📲 订阅到日历</button></span></div>`;
+    if (!items.length && !stale.length) {
+        el.innerHTML = head + '<div class="agenda-empty">🍃 最近 7 天没有截止和面试，去求职助手挑几家新的投投看？</div>';
+        return;
+    }
+    const chip = i => {
+        const d = new Date(i.at);
+        const when = i.all_day ? `${d.getMonth() + 1}/${d.getDate()}` : fmtDT(d);
+        const tag = i.kind === 'interview' && i.bucket === 'overdue' ? '待更新结果' : BUCKET[i.bucket];
+        return `<span class="ag-item ${i.bucket}" data-company="${esc(i.company)}" data-kind="${i.kind}">
+            <span class="ag-tag">${tag}</span>${esc(i.title)}<span class="ag-time">${when}</span></span>`;
+    };
+    el.innerHTML = head + `<div class="agenda-list">${items.slice(0, 12).map(chip).join('')}${items.length > 12 ? `<span class="ag-item" onclick="toggleCalendar(true)"><span class="ag-tag">更多</span>还有 ${items.length - 12} 项 →</span>` : ''}</div>`
+        + (stale.length ? `<div class="ag-stale">⏳ 等结果超过两周：${stale.slice(0, 8).map(s => `<a data-company="${esc(s.company)}">${esc(s.company)}（${s.days}天）</a>`).join('')}可以发邮件问问进度，或者让小招帮你写</div>` : '');
+}
+$('agenda').addEventListener('click', e => {
+    const t = e.target.closest('[data-company]');
+    if (!t) return;
+    const c = cardByName(t.dataset.company);
+    if (c) openEdit(c.id); else openInterviewList();
+});
+
+function deadlineInfo(c) {
+    if (!c.deadline) return null;
+    const d = new Date(c.deadline), diff = d - new Date();
+    if (diff < 0) return c.status === 'pending' ? { text: '已过期', cls: 'urgent', d } : null;
+    const days = Math.floor(diff / 86400000), hrs = Math.floor(diff % 86400000 / 3600000), mins = Math.floor(diff % 3600000 / 60000);
+    return { text: days > 0 ? `还剩 ${days} 天 ${hrs} 小时` : `还剩 ${hrs} 小时 ${mins} 分`, cls: days < 1 ? 'urgent' : days < 3 ? 'soon' : '', d };
+}
+
+function renderKanban() {
+    $('kanban-view').style.display = 'grid'; $('calendar-view').style.display = 'none';
+    const list = data.filter(c => (filter === 'all' || c.status === filter) && matches(c));
+    const key = c => {
+        const iv = nextInterview(c.company);
+        if (iv) return iv.date + 'T' + (iv.time || '23:59');
+        return c.deadline && c.status === 'pending' ? c.deadline : '9999';
+    };
+    list.sort((a, b) => (ORDER.indexOf(a.status) - ORDER.indexOf(b.status)) || key(a).localeCompare(key(b)) || a.company.localeCompare(b.company, 'zh'));
+    $('kanban-view').innerHTML = list.length ? list.map(c => {
+        const dl = deadlineInfo(c), iv = nextInterview(c.company), stale = staleDays(c.company);
+        return `<div class="card s-${esc(c.status)}" onclick="openEdit('${esc(c.id)}')">
+            <div class="company">${esc(c.company)}</div>
+            <div class="positions">${esc(c.positions)}</div>
+            <div class="meta"><span class="badge ${esc(c.status)}">${esc(STATUS[c.status] || c.status)}</span>
+                ${c.applied_at ? `<span>投递于 ${esc(c.applied_at.slice(5).replace('-', '.'))}</span>` : ''}
+                ${stale ? `<span class="stale">已等 ${stale} 天</span>` : ''}</div>
+            ${iv ? `<div class="deadline iv">🎤 ${esc(iv.round || '面试')} · ${esc(iv.date.slice(5).replace('-', '/'))} ${esc(iv.time || '')}</div>` : ''}
+            ${dl ? `<div class="deadline ${dl.cls}">⏰ ${dl.text} · ${fmtDT(dl.d)}</div>` : ''}
+            ${c.note ? `<div class="deadline">📝 ${esc(c.note)}</div>` : ''}
+        </div>`;
+    }).join('') : `<div class="empty">${data.length ? '没有找到相关记录' : '看板还是空的，点「＋ 新增」或者直接跟小招说你投了哪家'}</div>`;
+}
+
+function calendarEvents() {
+    const now = new Date(), past = new Date(now - 14 * 86400000), ev = [];
+    data.forEach(c => {
+        if (!c.deadline || c.status === 'ended' || !matches(c)) return;
+        const at = new Date(c.deadline), overdue = at < now && c.status === 'pending';
+        if (at < now && !overdue && at < past) return;
+        ev.push({ kind: 'deadline', at, allDay: false, company: c.company, sub: c.positions, cls: `s-${c.status}`, overdue,
+                  done: at < now && !overdue, open: `openEdit('${esc(c.id)}')`, label: overdue ? 'OVERDUE' : '截止' });
+    });
+    interviews.forEach(iv => {
+        if (!iv.date || isMock(iv)) return;
+        if (search && ![iv.company, iv.position, iv.round].some(x => (x || '').toLowerCase().includes(search.toLowerCase()))) return;
+        const at = new Date(`${iv.date}T${iv.time || '00:00'}`);
+        if (at < past) return;
+        ev.push({ kind: 'interview', at, allDay: !iv.time, company: iv.company, sub: `${iv.round || '面试'}${iv.position ? ' · ' + iv.position : ''}`,
+                  cls: 'k-interview', overdue: false, done: (iv.result || '待定') !== '待定', open: `openInterviewEdit('${esc(iv.id)}')`,
+                  label: `🎤 ${iv.result || '待定'}` });
+    });
+    return ev.sort((a, b) => a.at - b.at);
+}
+
+function renderCalendar() {
+    $('kanban-view').style.display = 'none'; $('calendar-view').style.display = 'block';
+    const ev = calendarEvents();
+    const bar = `<div class="cal-bar"><span>截止 ${ev.filter(e => e.kind === 'deadline').length} · 面试 ${ev.filter(e => e.kind === 'interview').length}（含最近两周）</span>
+        <button class="btn" onclick="openSubscribe()">📲 订阅到系统日历</button></div>`;
+    if (!ev.length) { $('calendar-view').innerHTML = bar + '<div class="empty">暂无截止时间和面试安排</div>'; return; }
+    const groups = {};
+    ev.forEach(e => { const k = localDate(e.at); (groups[k] = groups[k] || []).push(e); });
+    const today = localDate(new Date()), tom = localDate(new Date(Date.now() + 86400000));
+    $('calendar-view').innerHTML = bar + Object.keys(groups).sort().map(k => {
+        const d0 = new Date(k + 'T00:00:00');
+        const hasOverdue = groups[k].some(e => e.overdue);
+        const [tag, tc] = k === today ? ['Today', 'today'] : k === tom ? ['Tomorrow', 'tomorrow'] : k < today ? (hasOverdue ? ['Overdue', 'overdue'] : ['Past', 'past']) : ['', ''];
+        return `<div class="calendar-day">
+            <div class="calendar-day-header"><span>${MO[d0.getMonth()]} ${d0.getDate()} · ${WD[d0.getDay()]}</span>${tag ? `<span class="tag ${tc}">${tag}</span>` : ''}</div>
+            <div class="calendar-cards">${groups[k].map(e => `
+                <div class="calendar-card ${e.cls} ${e.overdue ? 'overdue' : ''} ${e.done ? 'done' : ''}" onclick="${e.open}">
+                    <div class="cc-company">${esc(e.company)}</div>
+                    <div class="cc-positions">${esc(e.sub)}</div>
+                    <div class="cc-time"><span class="time">${e.allDay ? '全天' : `${pad(e.at.getHours())}:${pad(e.at.getMinutes())}`}</span><span>${esc(e.label)}</span></div>
+                </div>`).join('')}</div>
+        </div>`;
+    }).join('');
+}
+function toggleCalendar(on) {
+    isCalendar = on === true ? true : !isCalendar;
+    $('calendar-btn').classList.toggle('active', isCalendar);
+    render();
+    if (isCalendar) $('calendar-view').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function openSubscribe() {
+    const host = location.host || '127.0.0.1:8000';
+    $('sub-url').value = `webcal://${host}/api/calendar.ics`;
+    $('sub-open').href = `webcal://${host}/api/calendar.ics`;
+    $('sub-download').href = `${API}/api/calendar.ics?download=1`;
+    $('push-hint').textContent = sysStatus.push
+        ? '手机上的提醒走微信：截止前 24h / 2h、面试前 24h / 1h 各推一次，每天早上 9 点推送当日待办（看板开着时生效）。'
+        : '在 .env 里配置 SERVERCHAN_KEY 后，还能在微信上收到截止和面试提醒。';
+    openModal('subscribe-modal');
+}
+
+// ---------- 图表 ----------
+function resetCharts() {
+    if (funnelChart) { funnelChart.destroy(); funnelChart = null; }
+    if (pieChart) { pieChart.destroy(); pieChart = null; }
+    lastChartSignature = ''; renderCharts();
+}
+function renderCharts() {
+    if (typeof Chart === 'undefined') return;
+    const s = counts();
+    const interviewed = new Set(data.filter(c => c.status === 'interview' || c.status === 'offer').map(c => norm(c.company)));
+    interviews.forEach(iv => { if (!isMock(iv) && cardByName(iv.company)) interviewed.add(norm(cardByName(iv.company).company)); });
+    const funnelData = [data.length, s.pending + s.interview + s.waiting + s.offer, interviewed.size, s.offer];
+    const pieData = ORDER.map(k => s[k]);
+    const sig = JSON.stringify([funnelData, pieData]);
+    if (sig === lastChartSignature && funnelChart && pieChart) return;
+    lastChartSignature = sig;
+
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const [accent, olive, mustard, ink, faint, paper, teal, plum] = ['--accent', '--olive', '--mustard', '--ink', '--ink-faint', '--paper', '--teal', '--plum'].map(css);
+    if (!funnelChart) {
+        funnelChart = new Chart($('funnel-chart'), {
+            type: 'bar',
+            data: { labels: ['总投递', '有回音', '进面试', 'Offer'],
+                datasets: [{ data: funnelData, backgroundColor: [accent, mustard, teal, plum], borderWidth: 0, barThickness: 22 }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { color: faint, font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(0,0,0,.05)' } },
+                          y: { ticks: { color: ink, font: { size: 11 } }, grid: { display: false } } } }
+        });
+    } else { funnelChart.data.datasets[0].data = funnelData; funnelChart.update('none'); }
+    if (!pieChart) {
+        pieChart = new Chart($('pie-chart'), {
+            type: 'doughnut',
+            data: { labels: ORDER.map(k => STATUS[k]),
+                datasets: [{ data: pieData, backgroundColor: [accent, teal, mustard, olive, plum, faint], borderWidth: 2, borderColor: paper }] },
+            options: { responsive: true, maintainAspectRatio: false, animation: false, cutout: '65%',
+                plugins: { legend: { position: 'right', labels: { color: ink, font: { size: 10 }, padding: 8, boxWidth: 10 } } } }
+        });
+    } else { pieChart.data.datasets[0].data = pieData; pieChart.update('none'); }
+}
+
+// ---------- 公司详情 / 编辑 ----------
+$('edit-status').innerHTML = ORDER.map(k => `<option value="${k}">${STATUS[k]}</option>`).join('');
+function editingCompanyName() { const c = cardById(editingId); return c ? c.company : $('edit-company').value.trim(); }
+
+function openAdd() {
+    editingId = null;
+    $('edit-title').textContent = '新增公司';
+    $('edit-company').value = search || ''; $('edit-positions').value = '';
+    $('edit-status').value = 'submitted'; $('edit-deadline').value = '';
+    $('edit-applied').value = localDate(new Date()); $('edit-note').value = '';
+    $('edit-extra').style.display = 'none'; $('edit-delete').style.display = 'none';
+    openModal('edit-modal'); $('edit-company').focus();
+}
+
+async function openEdit(id) {
+    const c = cardById(id); if (!c) return;
+    editingId = c.id;
+    $('edit-title').textContent = c.company;
+    $('edit-company').value = c.company; $('edit-positions').value = c.positions || '';
+    $('edit-status').value = c.status; $('edit-deadline').value = c.deadline || '';
+    $('edit-applied').value = c.applied_at || ''; $('edit-note').value = c.note || '';
+    $('edit-extra').style.display = 'block'; $('edit-delete').style.display = 'inline-flex';
+    renderEditInterviews(c.company);
+    $('edit-timeline').innerHTML = '<div class="muted">加载中…</div>';
+    openModal('edit-modal');
+    try {
+        const h = await api('/api/history?company=' + encodeURIComponent(c.company));
+        const label = s => STATUS[s] || s || '';
+        $('edit-timeline').innerHTML = h.length ? `<div class="timeline">${h.slice().reverse().map(x => {
+            const what = !x.old_status ? `新增 · ${label(x.new_status)}` : x.old_status !== x.new_status ? `${label(x.old_status)} → ${label(x.new_status)}` : '更新';
+            return `<div class="tl-item"><div class="tl-time">${esc(x.timestamp.slice(5, 16).replace('T', ' '))}</div>${esc(what)}${x.note ? ` <span class="tl-note">· ${esc(x.note)}</span>` : ''}</div>`;
+        }).join('')}</div>` : '<div class="muted">还没有记录（之后的每次变化都会记在这里）</div>';
+    } catch (e) { $('edit-timeline').innerHTML = '<div class="muted">时间线加载失败</div>'; }
+}
+function renderEditInterviews(company) {
+    const list = interviews.filter(iv => sameCompany(iv.company, company)).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    $('edit-interviews').innerHTML = list.length ? list.map(iv => `<div class="mini-iv" onclick="openInterviewEdit('${esc(iv.id)}')">
+        <span>${esc(iv.round || '面试')} · ${esc(iv.date || '日期未定')} ${esc(iv.time || '')}</span><span class="result ${esc(iv.result || '待定')}">${esc(iv.result || '待定')}</span></div>`).join('')
+        : '<div class="muted">还没有面试记录</div>';
+}
+
+async function saveEdit() {
+    const body = {
+        company: $('edit-company').value.trim(), positions: $('edit-positions').value.trim(), status: $('edit-status').value,
+        deadline: $('edit-deadline').value, applied_at: $('edit-applied').value, note: $('edit-note').value.trim()
+    };
+    if (!body.company) { showToast('公司名不能为空', 'error'); return; }
+    $('edit-save').disabled = true;
+    try {
+        let res;
+        if (editingId) {
+            const c = cardById(editingId);
+            res = await api('/api/update', { company: c.company, new_company: body.company !== c.company ? body.company : null,
+                new_status: body.status, new_note: body.note, new_deadline: body.deadline, new_positions: body.positions, applied_at: body.applied_at });
+        } else {
+            res = await api('/api/add', body);
+        }
+        showToast(res.message || '已保存', 'success');
+        closeModal('edit-modal'); loadData(true);
+    } catch (e) { showToast(e.message, 'error'); }
+    $('edit-save').disabled = false;
+}
+async function deleteFromEdit() {
+    const c = cardById(editingId); if (!c) return;
+    if (!confirm(`确定删除「${c.company}」？（面试记录会保留）`)) return;
+    try {
+        const res = await api('/api/delete', { company: c.company });
+        showToast(res.message, 'success'); closeModal('edit-modal'); loadData(true);
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ---------- 面试记录 ----------
+function openInterviewList() { renderInterviewList(); openModal('interview-list-modal'); }
+function renderInterviewList() {
+    const today = localDate(new Date());
+    const upcoming = interviews.filter(iv => !isMock(iv) && (iv.result || '待定') === '待定' && iv.date && iv.date >= today)
+        .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+    const rest = interviews.filter(iv => !upcoming.includes(iv)).sort((a, b) => (b.date || b.created_at || '').localeCompare(a.date || a.created_at || ''));
+    const el = $('interview-list');
+    if (!interviews.length) { el.innerHTML = '<div class="muted" style="text-align:center;padding:40px">还没有面试记录 · 跟小招说「约了 XX 一面，周五下午三点」就会自动记上</div>'; return; }
+    el.innerHTML = [...upcoming, ...rest].map(iv => `
+        <div class="interview-item" onclick="openInterviewEdit('${esc(iv.id)}')">
+            <div class="head">
+                <div><div class="title">${esc(iv.company)} · ${esc(iv.position || '未填岗位')}</div>
+                <div class="meta ${upcoming.includes(iv) ? 'soon' : ''}">${esc(iv.round || '')} · ${esc(iv.date || '未填日期')} ${esc(iv.time || '')}${upcoming.includes(iv) ? ' · 即将到来' : ''}</div></div>
+                <span class="result ${esc(iv.result || '待定')}">${esc(iv.result || '待定')}</span>
+            </div>
+            ${iv.questions ? `<div class="q">${esc(iv.questions.slice(0, 80))}${iv.questions.length > 80 ? '…' : ''}</div>` : ''}
+        </div>`).join('');
+}
+function openInterviewEdit(id, company) {
+    editingInterviewId = id || null;
+    const iv = id ? interviews.find(x => String(x.id) === String(id)) : null;
+    if (id && !iv) return;
+    $('interview-edit-title').textContent = iv ? '编辑面试' : '新增面试';
+    $('iv-company').value = iv ? iv.company : (company || '');
+    $('iv-position').value = iv ? iv.position || '' : (cardByName(company || '')?.positions || '').split('、')[0];
+    $('iv-round').value = iv ? iv.round || '' : '一面';
+    $('iv-date').value = iv ? iv.date || '' : '';
+    $('iv-time').value = iv ? iv.time || '' : '';
+    $('iv-result').value = iv ? iv.result || '待定' : '待定';
+    $('iv-questions').value = iv ? iv.questions || '' : '';
+    $('iv-reflection').value = iv ? iv.reflection || '' : '';
+    $('iv-delete-btn').style.display = iv ? 'inline-flex' : 'none';
+    openModal('interview-edit-modal');
+}
+async function saveInterview() {
+    const p = { id: editingInterviewId, company: $('iv-company').value.trim(), position: $('iv-position').value.trim(),
+        round: $('iv-round').value.trim() || '一面', date: $('iv-date').value, time: $('iv-time').value, result: $('iv-result').value,
+        questions: $('iv-questions').value.trim(), reflection: $('iv-reflection').value.trim() };
+    if (!p.company) { showToast('公司名不能为空', 'error'); return; }
+    try {
+        const res = await api('/api/interview/save', p);
+        showToast(res.message || '已保存', 'success'); closeModal('interview-edit-modal');
+        await loadData(true);
+        if ($('edit-modal').classList.contains('show') && editingId) renderEditInterviews(editingCompanyName());
+    } catch (e) { showToast(e.message, 'error'); }
+}
+async function deleteInterview() {
+    if (!editingInterviewId || !confirm('确定删除这条面试记录？')) return;
+    try {
+        const res = await api(`/api/interview/delete/${encodeURIComponent(editingInterviewId)}`, {});
+        showToast(res.message, 'success'); closeModal('interview-edit-modal');
+        await loadData(true);
+        if ($('edit-modal').classList.contains('show') && editingId) renderEditInterviews(editingCompanyName());
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ---------- 面试模拟 ----------
+function openMock() {
+    closeModal('interview-list-modal');
+    $('mock-setup').style.display = 'block'; $('mock-chat-area').style.display = 'none';
+    const next = interviews.filter(iv => !isMock(iv) && (iv.result || '待定') === '待定').sort((a, b) => (a.date || '9').localeCompare(b.date || '9'))[0];
+    $('mock-company').value = next ? next.company : '';
+    $('mock-position').value = next ? next.position || '' : '';
+    $('mock-round').value = next ? next.round || '一面' : '一面';
+    mockHistory = []; mockActive = false;
+    openModal('mock-modal');
+}
+const mockInfo = () => ({ company: $('mock-company').value.trim(), position: $('mock-position').value.trim(), round: $('mock-round').value.trim() || '一面' });
+async function startMock() {
+    const info = mockInfo();
+    if (!info.company) { showToast('请填写公司名', 'error'); return; }
+    $('mock-setup').style.display = 'none'; $('mock-chat-area').style.display = 'block';
+    $('mock-input-area').style.display = 'flex'; $('mock-end-btn').textContent = '结束并评估'; $('mock-end-btn').disabled = false;
+    $('mock-chat').innerHTML = '<div class="muted" style="text-align:center;padding:20px">面试官正在看你的简历…</div>';
+    mockActive = true; mockHistory = [];
+    try {
+        const d = await api('/api/mock_interview', { ...info, action: 'start', history: [] });
+        mockHistory.push({ role: 'interviewer', content: d.content }); renderMockChat();
+    } catch (e) { $('mock-chat').innerHTML = `<div style="color:var(--accent);padding:20px">面试官开小差了：${esc(e.message)}</div>`; }
+}
+function renderMockChat(thinking) {
+    const name = { interviewer: '面试官', candidate: '你', review: '面试评估' };
+    $('mock-chat').innerHTML = mockHistory.map(h => `<div class="mock-msg ${h.role}"><div class="role">${name[h.role]}</div>${esc(h.content)}</div>`).join('')
+        + (thinking ? `<div class="mock-msg interviewer"><div class="role">面试官</div>${thinking}</div>` : '');
+    $('mock-chat').scrollTop = $('mock-chat').scrollHeight;
+}
+async function sendMockAnswer() {
+    const ans = $('mock-input').value.trim();
+    if (!ans || !mockActive) return;
+    $('mock-input').value = '';
+    mockHistory.push({ role: 'candidate', content: ans });
+    renderMockChat('思考中…');
+    try {
+        const d = await api('/api/mock_interview', { ...mockInfo(), action: 'answer', history: mockHistory.slice(0, -1), answer: ans });
+        mockHistory.push({ role: 'interviewer', content: d.content });
+    } catch (e) { showToast('面试官走神了：' + e.message, 'error'); }
+    renderMockChat();
+}
+async function endMock() {
+    if (!mockActive) { closeModal('mock-modal'); return; }
+    if (!mockHistory.some(h => h.role === 'candidate')) { closeModal('mock-modal'); return; }
+    if (!confirm('结束模拟面试？小招会给出评估，并保存到面试记录本。')) return;
+    mockActive = false;
+    $('mock-input-area').style.display = 'none'; $('mock-end-btn').disabled = true;
+    renderMockChat('正在写评估…');
+    const info = mockInfo();
+    let review = '';
+    try {
+        review = (await api('/api/mock_interview', { ...info, action: 'finish', history: mockHistory })).content || '';
+        mockHistory.push({ role: 'review', content: review });
+    } catch (e) { showToast('评估生成失败：' + e.message, 'error'); }
+    renderMockChat();
+    const qa = mockHistory.filter(h => h.role !== 'review').map(h => `${h.role === 'interviewer' ? '【面试官】' : '【我的回答】'} ${h.content}`).join('\n\n');
+    try {
+        await api('/api/interview/save', { company: info.company, position: info.position, round: info.round + '（模拟）',
+            date: localDate(new Date()), questions: qa.slice(0, 4000), reflection: review, result: '待定' });
+        showToast('已保存到面试记录本', 'success'); loadData(true);
+    } catch (e) { showToast('保存失败：' + e.message, 'error'); }
+    $('mock-end-btn').textContent = '关闭'; $('mock-end-btn').disabled = false;
+}
+$('mock-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMockAnswer(); }
+});
+
+// ---------- JD / 偏好 / 周报 / 导出 ----------
+function openJDModal() { $('jd-result-area').style.display = 'none'; $('jd-input').value = ''; openModal('jd-modal'); $('jd-input').focus(); }
+async function fetchJD() {
+    const q = $('jd-input').value.trim();
+    if (!q) { showToast('请输入公司+岗位', 'error'); return; }
+    $('jd-result-area').style.display = 'block'; $('jd-content').textContent = '正在联网搜索…'; $('jd-btn').disabled = true;
+    try { const r = await api('/api/fetch_jd', { message: q }); $('jd-content').textContent = r.jd; }
+    catch (e) { $('jd-content').textContent = '抓取失败：' + e.message; }
+    $('jd-btn').disabled = false;
+}
+$('jd-input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) fetchJD(); });
+
+async function openProfileModal() {
+    openModal('profile-modal');
+    try {
+        const p = await api('/api/profile');
+        $('pf-cities').value = p.target_cities || ''; $('pf-roles').value = p.preferred_roles || '';
+        $('pf-avoid').value = p.avoid_companies || ''; $('pf-notes').value = p.notes || '';
+    } catch (e) {}
+}
+async function saveProfile() {
+    try {
+        const res = await api('/api/profile/save', { target_cities: $('pf-cities').value.trim(), preferred_roles: $('pf-roles').value.trim(),
+            avoid_companies: $('pf-avoid').value.trim(), notes: $('pf-notes').value.trim() });
+        showToast(res.message, 'success'); closeModal('profile-modal');
+    } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function showWeeklyReport() {
+    openModal('report-modal');
+    $('report-content').textContent = '加载中…'; $('review-content').style.display = 'none';
+    $('review-btn').style.display = sysStatus.ai ? 'inline-flex' : 'none'; $('review-btn').disabled = false;
+    try { $('report-content').textContent = (await api('/api/weekly_report')).report; }
+    catch (e) { $('report-content').textContent = '获取周报失败：' + e.message; }
+}
+async function aiReview() {
+    $('review-btn').disabled = true;
+    $('review-content').style.display = 'block'; $('review-content').textContent = '小招正在看你这周的进度…';
+    try { $('review-content').textContent = (await api('/api/weekly_report/ai', { report: $('report-content').textContent })).review; }
+    catch (e) { $('review-content').textContent = '点评失败：' + e.message; }
+    $('review-btn').disabled = false;
+}
+
+function exportPDF() {
+    const rows = data.slice().sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status)).map(c => `<tr><td>${esc(c.company)}</td><td>${esc(c.positions)}</td>
+        <td>${esc(STATUS[c.status] || c.status)}</td><td>${esc(c.applied_at || '-')}</td><td>${c.deadline ? fmtDT(new Date(c.deadline)) : '-'}</td><td>${esc(c.note || '-')}</td></tr>`).join('');
+    const ivs = interviews.filter(iv => !isMock(iv));
+    const ivHtml = ivs.length ? ivs.map(iv => `
+        <div class="interview-block"><h3>${esc(iv.company)} · ${esc(iv.position || '未填岗位')} · ${esc(iv.round)}</h3>
+        <div style="font-size:11px;color:#666;font-style:italic">📅 ${esc(iv.date || '未填')} ${esc(iv.time || '')} · 结果：${esc(iv.result || '待定')}</div>
+        ${iv.questions ? `<div style="font-size:11px;color:#666;margin-top:8px">面试题目：</div><div style="font-size:12px;white-space:pre-wrap">${esc(iv.questions)}</div>` : ''}
+        ${iv.reflection ? `<div style="font-size:11px;color:#666;margin-top:8px">复盘心得：</div><div style="font-size:12px;white-space:pre-wrap">${esc(iv.reflection)}</div>` : ''}
+        </div>`).join('') : '<div style="color:#666;font-size:12px;font-style:italic">暂无</div>';
+    $('print-area').innerHTML = `<h1>🍂 秋招手帐</h1>
+        <div class="subtitle">导出日期：${new Date().toLocaleDateString('zh-CN')} · 共 ${data.length} 家</div>
+        <table><thead><tr><th style="width:16%">公司</th><th style="width:26%">岗位</th><th style="width:10%">状态</th><th style="width:12%">投递</th><th style="width:14%">截止</th><th>备注</th></tr></thead><tbody>${rows}</tbody></table>
+        <div class="section-title">面试记录</div>${ivHtml}`;
+    setTimeout(() => window.print(), 100);
+}
+
+// ---------- SQL 练习 ----------
+let sqlSchema = null;
+async function openSql() {
+    openModal('sql-modal');
+    if (!$('sql-input').value) $('sql-input').value = localStorage.getItem('sqlLast') || 'SELECT company, status, applied_at\nFROM companies\nLIMIT 10;';
+    await loadSqlSchema();
+    $('sql-input').focus();
+}
+async function loadSqlSchema() {
+    try {
+        sqlSchema = await api('/api/sql/schema');
+        $('sql-tables').innerHTML = sqlSchema.tables.map(t => `
+            <details class="sql-table" ${t.name === 'companies' ? 'open' : ''}>
+                <summary><span class="sql-tname" data-insert="${esc(t.name)}">${esc(t.name)}</span><span class="sql-count">${t.rows} 行</span></summary>
+                ${t.desc ? `<div class="sql-tdesc">${esc(t.desc)}</div>` : ''}
+                ${t.columns.map(c => `<div class="sql-col" data-insert="${esc(c.name)}"><span class="sql-cname">${esc(c.name)}</span><span class="sql-type">${esc(c.type)}</span>${c.desc ? `<div class="sql-cdesc">${esc(c.desc)}</div>` : ''}</div>`).join('')}
+            </details>`).join('');
+        $('sql-examples').innerHTML = sqlSchema.examples.map((e, i) => `<button class="chip" data-example="${i}">${esc(e.title)}</button>`).join('');
+        $('sql-meta').textContent = `数据同步于 ${sqlSchema.synced_at} · 数据库文件 ${sqlSchema.db_path}`;
+    } catch (e) { $('sql-tables').innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
+}
+function insertSql(text) {
+    const t = $('sql-input'), s = t.selectionStart, e = t.selectionEnd;
+    t.value = t.value.slice(0, s) + text + t.value.slice(e);
+    t.selectionStart = t.selectionEnd = s + text.length;
+    t.focus();
+}
+function clearSql() { $('sql-input').value = ''; $('sql-result').innerHTML = ''; $('sql-status').textContent = '⌘ + Enter 运行'; $('sql-input').focus(); }
+async function runSql() {
+    const q = $('sql-input').value;
+    localStorage.setItem('sqlLast', q);
+    $('sql-run').disabled = true; $('sql-status').textContent = '查询中…';
+    try {
+        const r = await api('/api/sql', { query: q });
+        $('sql-status').textContent = `${r.rows.length} 行 · ${r.ms} ms${r.truncated ? '（只显示前 500 行）' : ''}`;
+        $('sql-result').innerHTML = !r.rows.length ? '<div class="muted">查询成功，但没有符合条件的数据</div>'
+            : `<table><thead><tr>${r.columns.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${r.rows.map(row =>
+                `<tr>${row.map(v => v === null ? '<td class="null">NULL</td>' : `<td title="${esc(v)}">${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    } catch (e) {
+        $('sql-status').textContent = '出错了';
+        $('sql-result').innerHTML = `<div class="sql-error">${esc(e.message)}</div>`;
+    }
+    $('sql-run').disabled = false;
+}
+async function syncSql() {
+    try { await api('/api/sql/sync', {}); await loadSqlSchema(); showToast('已从看板重新同步', 'success'); }
+    catch (e) { showToast(e.message, 'error'); }
+}
+$('sql-tables').addEventListener('click', e => {
+    const t = e.target.closest('[data-insert]'); if (!t) return;
+    if (t.classList.contains('sql-tname')) e.preventDefault();
+    insertSql(t.dataset.insert);
+});
+$('sql-examples').addEventListener('click', e => {
+    const c = e.target.closest('[data-example]'); if (!c || !sqlSchema) return;
+    $('sql-input').value = sqlSchema.examples[c.dataset.example].sql;
+    runSql();
+});
+$('sql-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); runSql(); }
+    if (e.key === 'Tab') { e.preventDefault(); insertSql('  '); }
+});
+
+// ---------- 小招 ----------
+async function toggleChat() {
+    const p = $('chat-panel');
+    p.classList.toggle('show');
+    if (p.classList.contains('show')) {
+        $('chat-input').focus();
+        if (!chatLoaded) { await loadChatHistory(); chatLoaded = true; }
+    }
+}
+const WELCOME = '嗨，我是小招 🍂\n把投递进展直接告诉我，我会马上写进看板，一次说好几家也没问题：\n· 「投了泡泡玛特的电商运营和品牌营销」\n· 「oppo AI面做完了，大疆测评也写了」\n· 「美团约了二面，周五下午三点」\n· 「焦内其实就是三立人」\n改错了点「撤销」就能恢复。';
+async function loadChatHistory() {
+    $('chat-messages').innerHTML = '';
+    try {
+        const h = await api('/api/chat_history');
+        if (!h.length) { addMsg('ai', WELCOME); return; }
+        const lastUndo = h.map(x => x.undo_id).filter(Boolean).pop();
+        h.forEach(x => addMsg(x.role === 'user' ? 'user' : 'ai', x.content, { animate: false, actions: x.actions, undoId: x.undo_id === lastUndo ? x.undo_id : null, images: x.images }));
+    } catch (e) { addMsg('ai', WELCOME); }
+}
+// 网址：带 http(s):// 或 www. 的，以及 AI 常写的不带协议的域名（shoplazza.cn/pages/join-us）
+const URL_RE = /(^|[^\w@\/.-])((?:https?:\/\/|www\.)[^\s<>"'`，。；！？、（）()]+|(?:[a-z0-9-]+\.)+(?:com\.cn|com|cn|net|org|io|ai|co|tech|jobs|work)(?![a-z0-9-])(?:\/[^\s<>"'`，。；！？、（）()]*)?)/gi;
+/** 把已转义文本里的 Markdown 链接和网址变成可点击的链接 */
+function linkify(html) {
+    const links = [];
+    const keep = a => `\u0000${links.push(a) - 1}\u0000`;
+    const anchor = (url, text) => `<a href="${/^https?:\/\//i.test(url) ? url : 'https://' + url}" target="_blank" rel="noopener">${text}</a>`;
+    return html
+        .replace(/\[([^\]\n]+)\]\(((?:https?:\/\/)?[^\s)]+)\)/g, (m, text, url) => keep(anchor(url, text)))
+        .replace(URL_RE, (m, pre, url) => {
+            const trail = url.match(/(?:&gt;|&quot;|&#39;|[.,;:!?])+$/)?.[0] || '';
+            const clean = url.slice(0, url.length - trail.length);
+            return pre + keep(anchor(clean, clean)) + trail;
+        })
+        .replace(/\u0000(\d+)\u0000/g, (m, i) => links[i]);
+}
+function fmt(t) {
+    return linkify(esc(t).replace(/^#{1,4}\s*(.+)$/gm, '<strong>$1</strong>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/^(\s*)[-*]\s+/gm, '$1• '));
+}
+function addMsg(role, content, { animate = true, actions = null, undoId = null, images = null } = {}) {
+    const d = document.createElement('div');
+    d.className = `msg ${role}`;
+    if (!animate) d.style.animation = 'none';
+    d.innerHTML = role === 'ai' ? `<div class="mini-avatar">${AI_ICON_SVG}</div><div class="msg-body"><div class="bubble"></div></div>`
+        : `<div class="mini-avatar">我</div><div class="msg-body"><div class="bubble"></div></div>`;
+    const bubble = d.querySelector('.bubble');
+    if (role === 'ai') bubble.innerHTML = fmt(content); else bubble.textContent = content;
+    if (!content) bubble.remove();
+    const pics = (images || []).filter(src => /^data:image\//.test(src));
+    if (pics.length) {
+        const box = document.createElement('div');
+        box.className = 'msg-images';
+        box.innerHTML = pics.map(src => `<img src="${esc(src)}" alt="图片">`).join('');
+        d.querySelector('.msg-body').prepend(box);
+    }
+    if (actions && actions.length) {
+        if (undoId) document.querySelectorAll('#chat-messages .undo-btn').forEach(b => b.remove());
+        const box = document.createElement('div');
+        box.className = 'actions';
+        box.innerHTML = actions.map(a => `<div class="act ${a.ok ? 'ok' : 'fail'}">${a.ok ? '✓' : '⚠'} ${esc(a.summary)}</div>`).join('')
+            + (undoId ? `<button class="undo-btn" data-undo="${esc(undoId)}">↩ 撤销这次修改</button>` : '');
+        d.querySelector('.msg-body').appendChild(box);
+    }
+    $('chat-messages').appendChild(d); $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+    return d;
+}
+function addTyping() {
+    const d = document.createElement('div');
+    d.className = 'msg ai typing';
+    d.innerHTML = `<div class="mini-avatar">${AI_ICON_SVG}</div><div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    $('chat-messages').appendChild(d); $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+    return d;
+}
+async function sendChat(text) {
+    const msg = (typeof text === 'string' ? text : $('chat-input').value).trim();
+    const pics = typeof text === 'string' ? [] : chatImages;
+    if ((!msg && !pics.length) || chatBusy) return;
+    chatBusy = true; $('chat-send').disabled = true;
+    $('chat-input').value = ''; $('chat-input').style.height = 'auto';
+    if (pics.length) { chatImages = []; renderChatPreviews(); }
+    addMsg('user', msg, { images: pics.map(p => p.thumb) });
+    const tp = addTyping();
+    try {
+        const res = await api('/api/chat', { message: msg, images: pics.map(p => p.full), thumbs: pics.map(p => p.thumb) });
+        tp.remove();
+        addMsg('ai', res.reply, { actions: res.actions, undoId: res.undo_id });
+        const done = (res.actions || []).filter(a => a.ok).length;
+        if (done) { showToast(`看板已更新 ${done} 处`, 'success'); loadData(true); }
+    } catch (e) { tp.remove(); addMsg('ai', '出了点小问题：' + e.message + '\n稍后再试一次？'); }
+    chatBusy = false; $('chat-send').disabled = false; $('chat-input').focus();
+}
+$('chat-messages').addEventListener('click', async e => {
+    const b = e.target.closest('.undo-btn');
+    if (!b || !confirm('把看板恢复到这次修改之前？')) return;
+    try {
+        try { await api('/api/undo', { undo_id: b.dataset.undo }); }
+        catch (err) {
+            if (err.status !== 409 || !confirm(err.message + '。仍然撤销吗？')) throw err;
+            await api('/api/undo', { undo_id: b.dataset.undo, force: true });
+        }
+        b.outerHTML = '<span class="undo-done">已撤销</span>';
+        showToast('已撤销', 'success'); loadData(true);
+    } catch (err) { showToast(err.message, 'error'); }
+});
+$('chat-chips').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    if (c.dataset.send) return sendChat(c.dataset.send);
+    $('chat-input').value = c.dataset.fill; $('chat-input').focus();
+});
+async function clearChat() {
+    if (!confirm('清空所有聊天记录？（看板数据不受影响）')) return;
+    try { await api('/api/chat_clear', {}); await loadChatHistory(); showToast('已清空', 'success'); }
+    catch (e) { showToast(e.message, 'error'); }
+}
+$('chat-send').onclick = () => sendChat();
+$('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendChat(); }
+});
+$('chat-input').addEventListener('input', e => {
+    e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+});
+
+// 小招看图：按钮选图 / 粘贴截图 / 拖进聊天窗口
+const MAX_CHAT_IMAGES = 4;
+let chatImages = [];   // [{ full: 发给 AI 的压缩图, thumb: 存进聊天记录的缩略图 }]
+function loadImage(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('这张图片读不出来')); };
+        img.src = url;
+    });
+}
+// 按像素总量压缩：长截图保留足够的宽度，文字才认得清
+function shrinkImage(img, maxPixels, maxSide, quality) {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const s = Math.min(1, Math.sqrt(maxPixels / (w * h)), maxSide / Math.max(w, h));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * s)); c.height = Math.max(1, Math.round(h * s));
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', quality);
+}
+async function addChatImages(files) {
+    for (const f of files) {
+        if (!f.type.startsWith('image/')) continue;
+        if (chatImages.length >= MAX_CHAT_IMAGES) { showToast(`一次最多发 ${MAX_CHAT_IMAGES} 张图`, 'error'); break; }
+        try {
+            const img = await loadImage(f);
+            chatImages.push({ full: shrinkImage(img, 3000000, 4096, 0.85), thumb: shrinkImage(img, 120000, 400, 0.7) });
+        } catch (e) { showToast(e.message, 'error'); }
+    }
+    renderChatPreviews();
+    $('chat-input').focus();
+}
+function renderChatPreviews() {
+    const box = $('chat-previews');
+    box.classList.toggle('show', chatImages.length > 0);
+    box.innerHTML = chatImages.map((p, i) => `<div class="chat-preview"><img src="${p.thumb}" alt=""><button data-remove="${i}" title="移除">×</button></div>`).join('');
+}
+$('chat-previews').addEventListener('click', e => {
+    const b = e.target.closest('[data-remove]'); if (!b) return;
+    chatImages.splice(Number(b.dataset.remove), 1); renderChatPreviews();
+});
+$('chat-attach').onclick = () => $('chat-file').click();
+$('chat-file').addEventListener('change', e => { addChatImages([...e.target.files]); e.target.value = ''; });
+$('chat-input').addEventListener('paste', e => {
+    const files = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
+    if (files.length) { e.preventDefault(); addChatImages(files); }
+});
+$('chat-panel').addEventListener('dragover', e => {
+    if ([...(e.dataTransfer?.items || [])].some(i => i.kind === 'file')) { e.preventDefault(); $('chat-panel').classList.add('dragover'); }
+});
+$('chat-panel').addEventListener('dragleave', e => { if (!$('chat-panel').contains(e.relatedTarget)) $('chat-panel').classList.remove('dragover'); });
+$('chat-panel').addEventListener('drop', e => {
+    e.preventDefault();
+    $('chat-panel').classList.remove('dragover');
+    const files = [...(e.dataTransfer?.files || [])].filter(f => f.type.startsWith('image/'));
+    if (files.length) addChatImages(files); else showToast('只能拖图片进来', 'error');
+});
+
+// ---------- 全局 ----------
+document.querySelectorAll('.filter').forEach(b => b.onclick = () => setFilter(b.dataset.filter));
+$('search').oninput = e => { search = e.target.value.trim(); render(); };
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        const open = [...document.querySelectorAll('.modal.show')];
+        if (open.length) closeModal(open[open.length - 1].id);
+        else if ($('chat-panel').classList.contains('show')) toggleChat();
+        return;
+    }
+    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if (e.key === '/' && !typing) { e.preventDefault(); $('search').focus(); }
+});
+
+async function init() {
+    autoTheme(); updateClock(); setInterval(updateClock, 1000);
+    try {
+        sysStatus = await api('/api/status');
+        $('jh-link').style.display = sysStatus.job_hunter ? 'inline-flex' : 'none';
+    } catch (e) {}
+    await loadData();
+    setInterval(() => { if (!document.hidden) loadData(); }, 5000);
+    setInterval(() => { autoTheme(); loadAgenda(); if (!isCalendar) renderKanban(); }, 60000);
+}
+init();
+</script>
+</body>
+</html>
