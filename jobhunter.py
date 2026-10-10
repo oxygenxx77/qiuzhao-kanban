@@ -5,8 +5,15 @@ import sqlite3
 
 import storage as st
 
-JOB_HUNTER_DB = os.getenv("JOB_HUNTER_DB") or os.path.expanduser("~/Desktop/job-hunter/backend/jobs.db")
-JOB_HUNTER_RESUME = os.getenv("JOB_HUNTER_RESUME") or os.path.expanduser("~/Desktop/job-hunter/backend/resume.json")
+
+def _job_hunter_backend():
+    # 两个仓库并排放时（…/qiuzhao-kanban 与 …/job-hunter）优先用同级目录
+    sibling = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "job-hunter", "backend")
+    return sibling if os.path.isdir(sibling) else os.path.expanduser("~/Desktop/job-hunter/backend")
+
+
+JOB_HUNTER_DB = os.getenv("JOB_HUNTER_DB") or os.path.join(_job_hunter_backend(), "jobs.db")
+JOB_HUNTER_RESUME = os.getenv("JOB_HUNTER_RESUME") or os.path.join(_job_hunter_backend(), "resume.json")
 JOB_STATUS = {"pending": "待确认", "approved": "待投递", "applied": "已投递", "rejected": "已拒绝"}
 
 
