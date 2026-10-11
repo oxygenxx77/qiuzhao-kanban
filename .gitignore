@@ -4,6 +4,7 @@
 !/.gitignore
 !/.env.example
 !/README.md
+!/LICENSE
 !/requirements.txt
 !/*.py
 !/index.html

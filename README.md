@@ -83,3 +83,7 @@ cd /tmp/kanban-demo && uvicorn main:app --port 8010
 - 投递记录、面试记录、聊天记录都只存在本机文件夹里
 - `.gitignore` 是白名单式的：默认忽略所有文件，只放行代码、示例和文档，数据文件和 `.env` 不会被误提交
 - 截图和 `demo/` 里的数据全部是虚构的
+
+## 许可证
+
+[MIT](LICENSE)
